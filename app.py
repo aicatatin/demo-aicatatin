@@ -1,57 +1,114 @@
 import streamlit as st
+import time
 import pandas as pd
 
-# Konfigurasi Halaman & Logo
-st.set_page_config(page_title="aicatatin - Demo", page_icon="🤖")
-st.title("🤖 aicatatin")
-st.caption("Tinggal Jepret, Laporan Beres.")
+# 1. Konfigurasi Halaman (Mobile Look)
+st.set_page_config(page_title="aicatatin", page_icon="🤖", layout="centered")
 
-# Sidebar untuk Profiling (Sesuai User Journey)
-with st.sidebar:
-    st.header("Profil Pengguna")
-    nama = st.text_input("Nama Kamu", "Juragan")
-    tipe_akun = st.radio("Tipe Akun", ["Personal", "UMKM"])
+# Custom CSS untuk Gaya WhatsApp & Animasi Splash
+st.markdown("""
+    <style>
+    /* Splash Screen Animation */
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+    .splash-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 80vh;
+    }
+    .blink-icon {
+        width: 100px;
+        animation: blink 1.5s infinite;
+    }
     
-    if tipe_akun == "UMKM":
-        sektor = st.selectbox("Sektor Usaha", ["FnB", "Fashion", "Retail"])
-        mode = st.selectbox("Mode Bisnis", ["Produktif (HPP)", "Retail (Margin)"])
-    else:
-        tema = st.selectbox("Tema Pengeluaran", ["Sewa Kos", "Jajan", "Harian"])
+    /* Login & WA Style */
+    .stButton>button { width: 100%; border-radius: 20px; }
+    .wa-chat-item {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    .wa-avatar {
+        background-color: #25D366;
+        color: white;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.write(f"### Halo, {nama}! 👋")
+# 2. Logika State Aplikasi (Session State)
+if 'page' not in st.session_state:
+    st.session_state.page = 'splash'
 
-# Fitur Utama: Upload
-st.subheader("📸 Input Data Keuangan")
-upload_type = st.tabs(["📷 Foto Bon", "📄 Mutasi Bank (PDF)", "⌨️ Manual"])
+# --- ROUTING HALAMAN ---
 
-with upload_type[0]:
-    foto = st.file_uploader("Upload Foto Struk", type=['jpg', 'png', 'jpeg'])
-    if foto:
-        st.success("AI sedang membaca bon... (Simulasi)")
-        # Contoh Output AI
-        st.info("**Hasil Analisis Chatty:**\n\nItem: Kain Katun | Total: Rp 500.000\n\n⚠️ *Harga naik 10% dari bulan lalu!*")
+# A. SPLASH SCREEN
+if st.session_state.page == 'splash':
+    st.markdown("""
+        <div class="splash-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" class="blink-icon">
+            <h2 style='color: #25D366;'>aicatatin</h2>
+            <p>Tinggal Jepret, Laporan Beres.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    time.sleep(3) # Durasi animasi 3 detik
+    st.session_state.page = 'login'
+    st.rerun()
 
-with upload_type[1]:
-    pdf = st.file_uploader("Upload PDF Mutasi", type=['pdf'])
-    if pdf:
-        st.success("PDF Mutasi Bank Berhasil Diunggah!")
-        st.write("Ditemukan 2 transaksi yang cocok dengan bon Anda (Rekonsiliasi Otomatis).")
+# B. HALAMAN LOGIN
+elif st.session_state.page == 'login':
+    st.markdown("<h2 style='text-align: center;'>Selamat Datang</h2>", unsafe_allow_html=True)
+    st.text_input("Nomor WhatsApp atau Email")
+    st.text_input("Password", type="password")
+    if st.button("Masuk"):
+        st.session_state.page = 'chat_list'
+        st.rerun()
+    st.markdown("<p style='text-align: center; font-size: 12px;'>Belum punya akun? Daftar di sini</p>", unsafe_allow_html=True)
 
-# Fitur BI: Laporan Sederhana
-st.divider()
-st.subheader("📊 Laporan BI (Business Intelligence)")
+# C. HALAMAN DAFTAR CHAT (ALA WHATSAPP)
+elif st.session_state.page == 'chat_list':
+    st.markdown("<h3 style='color: #075E54;'>aicatatin</h3>", unsafe_allow_html=True)
+    
+    # Daftar Chat (Mock Data)
+    chats = [
+        {"name": "Chatty AI", "msg": "Ada selisih Rp 20rb di mutasi kamu...", "time": "12:45"},
+        {"name": "Supplier Kain", "msg": "Kirim nota bahan baku bulan ini.", "time": "10:20"},
+        {"name": "Info Pajak", "msg": "Laporan bulanan sudah siap.", "time": "Yesterday"}
+    ]
+    
+    for chat in chats:
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.markdown(f'<div class="wa-avatar">{chat["name"][0]}</div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"**{chat['name']}**")
+            st.markdown(f"<small>{chat['msg']}</small>", unsafe_allow_html=True)
+        st.divider()
 
-# Data Dummy untuk Grafik
-data_dummy = pd.DataFrame({
-    'Kategori': ['Bahan Baku', 'Listrik', 'Sewa', 'Lainnya'],
-    'Nominal': [5000000, 500000, 2000000, 300000]
-})
+    if st.button("Buka Chatty AI 🤖"):
+        st.session_state.page = 'main_app'
+        st.rerun()
 
-col1, col2 = st.columns(2)
-with col1:
-    st.metric(label="Total Pengeluaran", value="Rp 7.800.000", delta="-5% (Lebih Hemat)")
-with col2:
-    st.write("Distribusi Biaya")
-    st.bar_chart(data_dummy.set_index('Kategori'))
-
-st.warning("🤖 **Insight AI:** Pengeluaran bahan baku meningkat. Sebaiknya cek supplier lain atau sesuaikan harga jual.")
+# D. HALAMAN UTAMA (Aplikasi yang kita buat sebelumnya)
+elif st.session_state.page == 'main_app':
+    if st.button("⬅️ Kembali ke Daftar Chat"):
+        st.session_state.page = 'chat_list'
+        st.rerun()
+    
+    st.write("### 🤖 Chatty AI Assistant")
+    # ... Masukkan kode dashboard BI & input yang kita buat sebelumnya di sini ...
+    st.info("Fitur Input Mutasi & Bon Aktif.")
+    uploaded = st.file_uploader("Upload Mutasi atau Struk")
